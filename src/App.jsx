@@ -1,5 +1,17 @@
-import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+/**
+ * 参考：
+ * https://express.heartrails.com/api.html
+ * https://qiita.com/t-kurasawa/items/03e5bc9c9a07d8ff99b7 
+ * https://openrouteservice.org/
+ * https://www.interpark.co.jp/dev/p0534.htm
+ * https://qiita.com/soichirowada/items/2311fd97bbf5841ccaf5
+ * 
+ */
+
+
+import { useState, useEffect, useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
+import L from 'leaflet'
 import './App.css'
 import 'leaflet/dist/leaflet.css'
 
@@ -8,6 +20,9 @@ function App() {
   const [selectedStation, setSelectedStation] = useState('')
   const [selectedStationData, setSelectedStationData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [routeCoords, setRouteCoords] = useState(null)
+  const mapRef = useRef(null)
+  const apiKey = import.meta.env.VITE_OPENROUTESERVICE_API_KEY
 
   useEffect(() => {
     const fetchStations = async () => {
@@ -146,6 +161,90 @@ function App() {
     }
   }
 
+  const handleShowRoute = async () => {
+    // 目的地とマップ参照がない場合は処理を中断
+    if (!selectedStationData || !mapRef.current) {
+      console.log('条件を満たしていません: selectedStationData=', selectedStationData, 'mapRef=', mapRef.current)
+      return
+    }
+
+    try {
+      // 現在地を取得し、OpenRouteService API の座標形式 (lng,lat) にする
+      const position = await getCurrentLocation()
+      const start = `${position.lng},${position.lat}`
+      const end = `${selectedStationData.lng},${selectedStationData.lat}`
+
+      console.log('ルート取得開始: start=', start, 'end=', end)
+
+      const response = await fetch(
+        `https://api.openrouteservice.org/v2/directions/cycling-regular?api_key=${apiKey}&start=${start}&end=${end}`
+      )
+
+      console.log('APIレスポンス status:', response.status)
+      const data = await response.json()
+      console.log('APIレスポンスデータ:', data)
+
+      if (!response.ok) {
+        console.error('ルート取得エラー:', data)
+        return
+      }
+
+      if (!data.features || !data.features[0]) {
+        console.error('ルートデータが存在しません:', data)
+        return
+      }
+
+      // 取得した経路を Leaflet のポリライン形式に変換して表示
+      const coords = data.features[0].geometry.coordinates
+      const latlngs = coords.map(coord => [coord[1], coord[0]]) // [lat, lng] に変換
+      console.log('ルート座標:', latlngs)
+      setRouteCoords(latlngs)
+
+      // マップ表示をルート全体に合わせる
+      const polyline = L.polyline(latlngs)
+      mapRef.current.fitBounds(polyline.getBounds())
+    } catch (error) {
+      console.error('ルートの取得に失敗しました:', error)
+    }
+  }
+
+  const handleShowGoogleMaps = async () => {
+    if (!selectedStationData) return
+
+    try {
+      // 現在地を取得
+      const position = await getCurrentLocation()
+      const start = `${position.lat},${position.lng}`
+      const end = selectedStationData.name
+
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}&travelmode=transit`
+      window.open(url, '_blank')
+    } catch (error) {
+      console.error('現在地の取得に失敗しました:', error)
+
+      // 位置情報が取れない場合は、目的地のみを Google Maps で表示する
+      const end = selectedStationData.name
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${end}&travelmode=transit`
+      window.open(url, '_blank')
+    }
+  }
+
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation is not supported')
+    }
+
+    // Geolocation API を Promise 化して await で取得
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject)
+    })
+
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    }
+  }
+
   return (
     <div className="app-container">
       <h1>東京都内ダーツの旅</h1>
@@ -174,6 +273,7 @@ function App() {
         <h2>目的地のマップ</h2>
         {/* MapContainer: React Leaflet マップの基本コンテナ */}
         <MapContainer
+          ref={mapRef}
           key={selectedStationData ? selectedStationData.name : 'default'}
           center={selectedStationData ? [selectedStationData.lat, selectedStationData.lng] : [35.6895, 139.6917]}
           zoom={selectedStationData ? 15 : 10}
@@ -201,7 +301,29 @@ function App() {
               </Popup>
             </Marker>
           )}
+          {/* ルート polyline */}
+          {routeCoords && (
+            <Polyline
+              positions={routeCoords}
+              color="blue"
+              weight={5}
+            />
+          )}
         </MapContainer>
+        <button
+          onClick={handleShowRoute}
+          className="route-button"
+          disabled={loading || !selectedStationData}
+        >
+          簡易ルートを表示する
+        </button>
+        <button
+          onClick={handleShowGoogleMaps}
+          className="google-maps-button"
+          disabled={loading || !selectedStationData}
+        >
+          GoogleMapでルートを表示する
+        </button>
       </div>
     </div>
   )
