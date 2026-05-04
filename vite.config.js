@@ -7,4 +7,5 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  base: '/DARTS_TRIP_APP/',
 })
