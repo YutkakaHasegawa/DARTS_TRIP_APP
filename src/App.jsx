@@ -245,8 +245,8 @@ function App() {
     }
   }
 
+  // https://qiita.com/meiyutianzhong557/items/5a7b0bd4d0629f5e3bab
   const customMarker = () => {
-
     return L.icon({
       iconUrl: "lib/img/marker-icon.png",
       iconSize: [25, 41],
