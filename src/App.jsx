@@ -245,6 +245,15 @@ function App() {
     }
   }
 
+  const customMarker = () => {
+
+    return L.icon({
+      iconUrl: "lib/img/marker-icon.png",
+      iconSize: [25, 41],
+      className: "marker",
+    });
+  };
+
   return (
     <div className="app-container">
       <h1>東京都内ダーツの旅</h1>
@@ -289,6 +298,7 @@ function App() {
           {selectedStationData && (
             <Marker
               position={[selectedStationData.lat, selectedStationData.lng]}
+              icon={customMarker()}
             >
               {/* Popup: マーカークリック時に表示される情報 */}
               <Popup>
