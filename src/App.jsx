@@ -245,10 +245,15 @@ function App() {
     }
   }
 
+  //以下のページの差分を吸収
+  //ローカル開発: http://localhost:5173/
+  //GitHub Pages: https://username.github.io/DARTS_TRIP_APP/
+  const markerIconUrl = `${import.meta.env.BASE_URL}marker-icon.png`
+
   // https://qiita.com/meiyutianzhong557/items/5a7b0bd4d0629f5e3bab
   const customMarker = () => {
     return L.icon({
-      iconUrl: "lib/img/marker-icon.png",
+      iconUrl: markerIconUrl,
       iconSize: [25, 41],
       className: "marker",
     });
