@@ -7,7 +7,6 @@
  * - mapRef (object): マップへのref
  */
 
-import { useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { MAP_CONFIG, OPENSTREETMAP_CONFIG } from '../constants/constants'
