@@ -14,6 +14,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import './App.css'
 import 'leaflet/dist/leaflet.css'
+import Select from 'react-select'
 
 function App() {
   const [tokyoStations, setTokyoStations] = useState([])
@@ -21,8 +22,20 @@ function App() {
   const [selectedStationData, setSelectedStationData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [routeCoords, setRouteCoords] = useState(null)
+  const [selectedProfile, setProfile] = useState({ value: 'car', label: '車' }) // デフォルトは車ルート
   const mapRef = useRef(null)
   const apiKey = import.meta.env.VITE_OPENROUTESERVICE_API_KEY
+
+  const profiles = [
+    { value: 'car', label: '車' },
+    { value: 'bike', label: '自転車' },
+    { value: 'walking', label: '徒歩' }
+  ]
+  const profileMapping = {
+        'car': 'driving-car',
+        'bike': 'cycling-regular',
+        'walking': 'foot-walking'
+      }
 
   useEffect(() => {
     const fetchStations = async () => {
@@ -171,13 +184,15 @@ function App() {
     try {
       // 現在地を取得し、OpenRouteService API の座標形式 (lng,lat) にする
       const position = await getCurrentLocation()
+      const profile = profileMapping[selectedProfile.value] || 'cycling-regular' // プロフィールが選択されていない場合はデフォルトを使用
       const start = `${position.lng},${position.lat}`
       const end = `${selectedStationData.lng},${selectedStationData.lat}`
+
 
       console.log('ルート取得開始: start=', start, 'end=', end)
 
       const response = await fetch(
-        `https://api.openrouteservice.org/v2/directions/cycling-regular?api_key=${apiKey}&start=${start}&end=${end}`
+        `https://api.openrouteservice.org/v2/directions/${profile}?api_key=${apiKey}&start=${start}&end=${end}`
       )
 
       console.log('APIレスポンス status:', response.status)
@@ -325,20 +340,36 @@ function App() {
             />
           )}
         </MapContainer>
-        <button
-          onClick={handleShowRoute}
-          className="route-button"
-          disabled={loading || !selectedStationData}
-        >
-          簡易ルートを表示する
-        </button>
-        <button
-          onClick={handleShowGoogleMaps}
-          className="google-maps-button"
-          disabled={loading || !selectedStationData}
-        >
-          GoogleMapでルートを表示する
-        </button>
+        <div className="rough-route">
+          <Select
+            options={profiles}
+            value={selectedProfile}
+            onChange={(option) => setProfile(option)}
+            isDisabled={loading || !selectedStationData}
+            styles={{
+              container: (base) => ({
+                ...base,
+                width: 150, // 固定幅
+              }),
+            }}
+          />
+          <button
+            onClick={handleShowRoute}
+            className="route-button"
+            disabled={loading || !selectedStationData}
+          >
+            簡易ルートを確認する ({selectedProfile.label})
+          </button>
+        </div>
+        <div className="google-route">
+          <button
+            onClick={handleShowGoogleMaps}
+            className="google-maps-button"
+            disabled={loading || !selectedStationData}
+          >
+            GoogleMapでルートを確認する
+          </button>
+        </div>
       </div>
     </div>
   )
