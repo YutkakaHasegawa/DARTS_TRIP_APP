@@ -27,6 +27,7 @@ function RoutePanel({
         value={selectedProfile}
         onChange={onProfileChange}
         isDisabled={disabled || loading}
+        isSearchable={false}
         styles={{
           container: (base) => ({
             ...base,
