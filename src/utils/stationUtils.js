@@ -1,8 +1,8 @@
 const TOKYO_23KU_BOUNDS = {
-  minLat: 35.48,
-  maxLat: 35.84,
-  minLng: 139.50,
-  maxLng: 139.97,
+  minLat: 35.56,
+  maxLat: 35.78,
+  minLng: 139.60,
+  maxLng: 139.93,
 }
 
 const JR_LINE_PATTERNS = [
