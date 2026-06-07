@@ -49,6 +49,32 @@ h1 {
   font-size: 14px;
 }
 
+.filter-toggle-button {
+  align-self: center;
+  border-radius: 999px;
+  padding: 8px 16px;
+  width: fit-content;
+}
+
+.filter-area {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 35px;
+  padding: 10px 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toggle-group-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
 .text-area {
   padding: 12px;
   border: 2px solid #e0e0e0;

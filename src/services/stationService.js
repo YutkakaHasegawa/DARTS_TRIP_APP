@@ -4,6 +4,7 @@
 
 import { API_CONFIG, TOKYO_BOUNDS, FALLBACK_STATIONS } from '../constants/constants'
 import { isValidCoordinate } from '../utils/coordinateUtils'
+import { getStationArea, isJRLineName } from '../utils/stationUtils'
 
 /**
  * 東京都の全駅データを取得
@@ -71,12 +72,31 @@ export const fetchTokyoStations = async () => {
                 )
               ) {
                 // 駅名をキーに、座標情報を値として保存（重複排除）
-                if (!allStationsMap.has(station.name)) {
-                  allStationsMap.set(station.name, {
-                    name: station.name,
+                const stationName = station.name
+                const lineName = typeof line === 'string' ? line : ''
+                const stationArea = getStationArea(lat, lng)
+                const stationIsJR = isJRLineName(lineName)
+
+                if (!allStationsMap.has(stationName)) {
+                  const lineSet = new Set()
+                  if (lineName) {
+                    lineSet.add(lineName)
+                  }
+
+                  allStationsMap.set(stationName, {
+                    name: stationName,
                     lat: lat,
                     lng: lng,
+                    area: stationArea,
+                    isJR: stationIsJR,
+                    lines: lineSet,
                   })
+                } else {
+                  const existingStation = allStationsMap.get(stationName)
+                  if (lineName) {
+                    existingStation.lines.add(lineName)
+                  }
+                  existingStation.isJR = existingStation.isJR || stationIsJR
                 }
               }
             } catch (error) {
@@ -88,18 +108,32 @@ export const fetchTokyoStations = async () => {
     }
 
     // マップを配列に変換
-    const stationArray = Array.from(allStationsMap.values())
+    const stationArray = Array.from(allStationsMap.values()).map((station) => ({
+      ...station,
+      lines: Array.from(station.lines).sort(),
+    }))
+
     console.log('最終的な駅数:', stationArray.length)
 
     if (stationArray.length === 0) {
       console.log('駅データが取得できなかったため、フォールバックデータを使用します')
-      return FALLBACK_STATIONS
+      return FALLBACK_STATIONS.map((station) => ({
+        ...station,
+        area: getStationArea(station.lat, station.lng),
+        isJR: true,
+        lines: [],
+      }))
     }
 
     console.log('駅データのサンプル:', stationArray.slice(0, 3))
     return stationArray
   } catch (error) {
     console.error('駅情報の取得に失敗しました:', error)
-    return FALLBACK_STATIONS
+    return FALLBACK_STATIONS.map((station) => ({
+      ...station,
+      area: getStationArea(station.lat, station.lng),
+      isJR: true,
+      lines: [],
+    }))
   }
 }

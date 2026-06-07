@@ -8,14 +8,15 @@
  * - 定数とユーティリティを外部ファイルに集約
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import L from 'leaflet'
 import './App.css'
 import 'leaflet/dist/leaflet.css'
 
 import { useStations } from './hooks/useStations'
 import { useRoute } from './hooks/useRoute'
-import { ROUTING_PROFILES } from './constants/constants'
+import { ROUTING_PROFILES, AREA_FILTERS, LINE_FILTERS } from './constants/constants'
+import { filterStations } from './utils/stationUtils'
 
 import StationSelector from './components/StationSelector'
 import MapView from './components/MapView'
@@ -24,11 +25,22 @@ import GoogleMapsLink from './components/GoogleMapsLink'
 
 function App() {
   // 駅データ管理
-  const { stations, loading: stationsLoading, selectRandomStation } = useStations()
+  const { stations, loading: stationsLoading } = useStations()
 
   // 選択された駅の管理
   const [selectedStation, setSelectedStation] = useState('')
   const [selectedStationData, setSelectedStationData] = useState(null)
+
+  // フィルタ選択状態
+  const [selectedAreas, setSelectedAreas] = useState(AREA_FILTERS.map((filter) => filter.value))
+  const [selectedLineTypes, setSelectedLineTypes] = useState(LINE_FILTERS.map((filter) => filter.value))
+
+  const filteredStations = useMemo(
+    () => filterStations(stations, selectedAreas, selectedLineTypes),
+    [stations, selectedAreas, selectedLineTypes]
+  )
+
+  const hasFilteredStations = filteredStations.length > 0
 
   // ルート管理
   const { route: routeCoords, loading: routeLoading, fetchRouteCoords, resetRoute } = useRoute()
@@ -42,8 +54,29 @@ function App() {
   /**
    * 目的地の駅をランダムに選択
    */
+  const handleToggleArea = (event, newSelectedAreas) => {
+    if (newSelectedAreas.length === 0) {
+      return
+    }
+    setSelectedAreas(newSelectedAreas)
+  }
+
+  const handleToggleLineType = (event, newSelectedLineTypes) => {
+    if (newSelectedLineTypes.length === 0) {
+      return
+    }
+    setSelectedLineTypes(newSelectedLineTypes)
+  }
+
   const handleDecideDestination = () => {
-    const station = selectRandomStation()
+    if (!hasFilteredStations) {
+      console.warn('選択されたフィルタに該当する駅がありません')
+      return
+    }
+
+    const randomIndex = Math.floor(Math.random() * filteredStations.length)
+    const station = filteredStations[randomIndex]
+
     if (station) {
       setSelectedStation(station.name)
       setSelectedStationData(station)
@@ -96,7 +129,13 @@ function App() {
         selectedStation={selectedStation}
         onSelectStation={handleDecideDestination}
         loading={stationsLoading}
-        hasStations={stations.length > 0}
+        hasStations={hasFilteredStations}
+        selectedAreas={selectedAreas}
+        selectedLineTypes={selectedLineTypes}
+        onToggleArea={handleToggleArea}
+        onToggleLineType={handleToggleLineType}
+        areaFilters={AREA_FILTERS}
+        lineFilters={LINE_FILTERS}
       />
 
       <MapView

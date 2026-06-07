@@ -31,6 +31,17 @@ export const PROFILE_MAPPING = {
   'walking': 'foot-walking'
 }
 
+// 駅フィルタ定義
+export const AREA_FILTERS = [
+  { value: '23ku', label: '23区' },
+  { value: 'tama', label: '多摩' }
+]
+
+export const LINE_FILTERS = [
+  { value: 'JR', label: 'JR' },
+  { value: 'private', label: '私鉄' }
+]
+
 // フォールバック駅データ（API利用不可時）
 export const FALLBACK_STATIONS = [
   { name: '東京駅', lat: 35.681236, lng: 139.767125 },
