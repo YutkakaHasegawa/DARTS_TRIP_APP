@@ -43,6 +43,8 @@ function StationSelector({
   onSelectStation,
   loading,
   hasStations,
+  rolling,
+  blinkSpeed,
   selectedAreas,
   selectedLineTypes,
   onToggleArea,
@@ -56,7 +58,12 @@ function StationSelector({
     <div className="station-selector">
       <div className="text-area-wrapper">
         <label>目的地</label>
-        <textarea value={selectedStation} readOnly className="text-area" />
+        <div className="station-name" aria-live="polite">
+          <span className="station-name-bg" aria-hidden="true" />
+          <span className={`station-name-text ${rolling ? "rolling" : ""}`} style={{ animationDuration: `${blinkSpeed}s` }}>
+            {selectedStation || "未選択"}
+          </span>
+        </div>
       </div>
 
       <Button
@@ -130,13 +137,23 @@ function StationSelector({
 
       <button
         onClick={onSelectStation}
-        className="decide-button"
-        disabled={loading || !hasStations}
+        className={"decide-button"}
+        disabled={loading || !hasStations || rolling}
       >
-        {loading ? "駅情報を読込中..." : "行先を決める"}
+        {getDecideButtonText(loading, hasStations, rolling)}
       </button>
     </div>
   );
+}
+
+const getDecideButtonText = (loading, hasStations, rolling) => {
+  if (loading) {
+    return "駅情報を読込中..."
+  }
+  if (rolling) {
+    return "抽選中..."
+  }
+  return "行先を決める"
 }
 
 export default StationSelector;

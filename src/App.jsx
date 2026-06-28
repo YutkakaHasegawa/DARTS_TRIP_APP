@@ -31,6 +31,10 @@ function App() {
   const [selectedStation, setSelectedStation] = useState('')
   const [selectedStationData, setSelectedStationData] = useState(null)
 
+  // 駅名がランダムに変わっている状態の管理
+  const [isRolling, setIsRolling] = useState(false)
+  const [blinkSpeed, setBlinkSpeed] = useState(0) //TBD: 駅名の点滅速度（ルーレットの回転速度に合わせて変化させる予定）
+
   // フィルタ選択状態
   const [selectedAreas, setSelectedAreas] = useState(AREA_FILTERS.map((filter) => filter.value))
   const [selectedLineTypes, setSelectedLineTypes] = useState(LINE_FILTERS.map((filter) => filter.value))
@@ -74,15 +78,36 @@ function App() {
       return
     }
 
-    const randomIndex = Math.floor(Math.random() * filteredStations.length)
-    const station = filteredStations[randomIndex]
+    // 駅が選択されるまでの間、駅名をランダムに変化させる
+    setIsRolling(true)
+    let count = 0;
+    const maxCount = 15;
 
-    if (station) {
+    const rollStation = () => {
+      const randomIndex = Math.floor(Math.random() * filteredStations.length)
+      const station = filteredStations[randomIndex]
       setSelectedStation(station.name)
-      setSelectedStationData(station)
-      resetRoute()
-      console.log('Selected station:', station)
+
+      count++;
+
+      if (count < maxCount) {
+        // ルーレットの減速
+        const delay = 50 + count * 20;
+
+        // 点滅も遅くする TBD
+        //setBlinkSpeed(0.1 + count * 0.05);
+
+        setTimeout(rollStation, delay);
+      } else {
+        setSelectedStationData(station)
+        resetRoute()
+        setIsRolling(false)
+        //setBlinkSpeed(0.1); // 元に戻す TBD
+        console.log('Selected station:', station)
+      }
     }
+
+    rollStation()
   }
 
   /**
@@ -129,6 +154,8 @@ function App() {
         selectedStation={selectedStation}
         onSelectStation={handleDecideDestination}
         loading={stationsLoading}
+        rolling={isRolling}
+        blinkSpeed={blinkSpeed}
         hasStations={hasFilteredStations}
         selectedAreas={selectedAreas}
         selectedLineTypes={selectedLineTypes}
